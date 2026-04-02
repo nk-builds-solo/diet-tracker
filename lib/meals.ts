@@ -51,6 +51,31 @@ export async function addMeal(data: {
   return rowToMeal(result.rows[0] as Record<string, unknown>);
 }
 
+export async function getMealById(id: number): Promise<Meal | null> {
+  const db = getDb();
+  const result = await db.execute({ sql: 'SELECT * FROM meals WHERE id = ?', args: [id] });
+  if (result.rows.length === 0) return null;
+  return rowToMeal(result.rows[0] as Record<string, unknown>);
+}
+
+export async function updateMeal(id: number, data: {
+  meal_type: MealType; name: string; calories: number;
+  protein_g?: number; fat_g?: number; carbs_g?: number;
+  image_url?: string; memo?: string;
+}): Promise<Meal> {
+  const db = getDb();
+  const result = await db.execute({
+    sql: `UPDATE meals SET meal_type=?, name=?, calories=?, protein_g=?, fat_g=?, carbs_g=?, image_url=?, memo=?
+          WHERE id=? RETURNING *`,
+    args: [
+      data.meal_type, data.name, data.calories,
+      data.protein_g ?? 0, data.fat_g ?? 0, data.carbs_g ?? 0,
+      data.image_url ?? '', data.memo ?? '', id,
+    ],
+  });
+  return rowToMeal(result.rows[0] as Record<string, unknown>);
+}
+
 export async function deleteMeal(id: number): Promise<void> {
   const db = getDb();
   await db.execute({ sql: 'DELETE FROM meals WHERE id = ?', args: [id] });
