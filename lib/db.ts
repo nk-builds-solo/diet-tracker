@@ -1,23 +1,42 @@
-import Database from 'better-sqlite3';
-import path from 'path';
-import fs from 'fs';
+import { createClient } from '@libsql/client';
 
-const DB_PATH = path.join(process.cwd(), 'data', 'diet.db');
-const SCHEMA_PATH = path.join(process.cwd(), 'lib', 'schema.sql');
+const globalForDb = globalThis as unknown as { _dbClient?: ReturnType<typeof createClient> };
 
-const globalForDb = globalThis as unknown as { _db?: Database.Database };
-
-export function getDb(): Database.Database {
-  if (!globalForDb._db) {
-    const dbDir = path.dirname(DB_PATH);
-    if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
-
-    globalForDb._db = new Database(DB_PATH);
-    globalForDb._db.pragma('journal_mode = WAL');
-    globalForDb._db.pragma('foreign_keys = ON');
-
-    const schema = fs.readFileSync(SCHEMA_PATH, 'utf-8');
-    globalForDb._db.exec(schema);
+export function getDb() {
+  if (!globalForDb._dbClient) {
+    globalForDb._dbClient = createClient({
+      url: process.env.TURSO_DATABASE_URL ?? 'file:data/diet.db',
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
   }
-  return globalForDb._db;
+  return globalForDb._dbClient;
+}
+
+export async function initSchema() {
+  const db = getDb();
+  await db.batch([
+    `CREATE TABLE IF NOT EXISTS meals (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      date        TEXT    NOT NULL,
+      meal_type   TEXT    NOT NULL,
+      name        TEXT    NOT NULL,
+      calories    INTEGER NOT NULL,
+      memo        TEXT    DEFAULT '',
+      created_at  TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_meals_date ON meals(date)`,
+    `CREATE TABLE IF NOT EXISTS weight_logs (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      date        TEXT    NOT NULL UNIQUE,
+      weight_kg   REAL    NOT NULL,
+      created_at  TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_weight_date ON weight_logs(date)`,
+    `CREATE TABLE IF NOT EXISTS settings (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )`,
+    `INSERT OR IGNORE INTO settings(key, value) VALUES ('target_calories', '2000')`,
+    `INSERT OR IGNORE INTO settings(key, value) VALUES ('target_weight_kg', '')`,
+  ], 'write');
 }

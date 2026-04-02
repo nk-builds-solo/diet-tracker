@@ -3,7 +3,8 @@ import { getWeightLogs, upsertWeight } from '@/lib/weight';
 
 export async function GET(req: NextRequest) {
   const limit = Number(req.nextUrl.searchParams.get('limit') ?? '30');
-  return NextResponse.json({ data: getWeightLogs(limit) });
+  const data = await getWeightLogs(limit);
+  return NextResponse.json({ data });
 }
 
 export async function POST(req: NextRequest) {
@@ -12,6 +13,6 @@ export async function POST(req: NextRequest) {
   if (!date || weight_kg == null) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
-  const log = upsertWeight(date, Number(weight_kg));
+  const log = await upsertWeight(date, Number(weight_kg));
   return NextResponse.json({ data: log }, { status: 201 });
 }

@@ -8,11 +8,13 @@ function todayStr() {
   return new Date().toLocaleDateString('sv-SE');
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
   const today = todayStr();
-  const meals = getMealsByDate(today);
-  const weightLogs = getWeightLogs(7);
-  const settings = getSettings();
+  const [meals, weightLogs, settings] = await Promise.all([
+    getMealsByDate(today),
+    getWeightLogs(7),
+    getSettings(),
+  ]);
 
   const dateLabel = new Date().toLocaleDateString('ja-JP', {
     year: 'numeric', month: 'long', day: 'numeric', weekday: 'short',

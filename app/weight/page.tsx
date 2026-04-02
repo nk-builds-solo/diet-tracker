@@ -3,9 +3,11 @@ import { getWeightLogs, getSettings } from '@/lib/weight';
 import WeightChart from '@/components/weight/WeightChart';
 import WeightHistory from '@/components/weight/WeightHistory';
 
-export default function WeightPage() {
-  const logs = getWeightLogs(30);
-  const settings = getSettings();
+export default async function WeightPage() {
+  const [logs, settings] = await Promise.all([
+    getWeightLogs(30),
+    getSettings(),
+  ]);
 
   return (
     <div className="py-6 space-y-5">

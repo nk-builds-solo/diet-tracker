@@ -1,28 +1,48 @@
-import { getDb } from './db';
+import { getDb, initSchema } from './db';
 import type { Meal, MealType, DailySummary } from './types';
 
-export function getMealsByDate(date: string): Meal[] {
-  const db = getDb();
-  return db.prepare('SELECT * FROM meals WHERE date = ? ORDER BY created_at ASC').all(date) as Meal[];
+function rowToMeal(row: Record<string, unknown>): Meal {
+  return {
+    id: Number(row.id),
+    date: String(row.date),
+    meal_type: String(row.meal_type) as MealType,
+    name: String(row.name),
+    calories: Number(row.calories),
+    memo: String(row.memo ?? ''),
+    created_at: String(row.created_at),
+  };
 }
 
-export function addMeal(data: { date: string; meal_type: MealType; name: string; calories: number; memo?: string }): Meal {
+export async function getMealsByDate(date: string): Promise<Meal[]> {
+  await initSchema();
   const db = getDb();
-  const result = db.prepare(
-    'INSERT INTO meals (date, meal_type, name, calories, memo) VALUES (?, ?, ?, ?, ?) RETURNING *'
-  ).get(data.date, data.meal_type, data.name, data.calories, data.memo ?? '') as Meal;
-  return result;
+  const result = await db.execute({
+    sql: 'SELECT * FROM meals WHERE date = ? ORDER BY created_at ASC',
+    args: [date],
+  });
+  return result.rows.map(r => rowToMeal(r as Record<string, unknown>));
 }
 
-export function deleteMeal(id: number): void {
+export async function addMeal(data: {
+  date: string; meal_type: MealType; name: string; calories: number; memo?: string;
+}): Promise<Meal> {
   const db = getDb();
-  db.prepare('DELETE FROM meals WHERE id = ?').run(id);
+  const result = await db.execute({
+    sql: 'INSERT INTO meals (date, meal_type, name, calories, memo) VALUES (?, ?, ?, ?, ?) RETURNING *',
+    args: [data.date, data.meal_type, data.name, data.calories, data.memo ?? ''],
+  });
+  return rowToMeal(result.rows[0] as Record<string, unknown>);
 }
 
-export function getDailySummaries(days: number): DailySummary[] {
+export async function deleteMeal(id: number): Promise<void> {
   const db = getDb();
-  return db.prepare(`
-    SELECT
+  await db.execute({ sql: 'DELETE FROM meals WHERE id = ?', args: [id] });
+}
+
+export async function getDailySummaries(days: number): Promise<DailySummary[]> {
+  const db = getDb();
+  const result = await db.execute({
+    sql: `SELECT
       date,
       SUM(calories) as total_calories,
       SUM(CASE WHEN meal_type='breakfast' THEN calories ELSE 0 END) as breakfast_cal,
@@ -32,6 +52,15 @@ export function getDailySummaries(days: number): DailySummary[] {
     FROM meals
     GROUP BY date
     ORDER BY date DESC
-    LIMIT ?
-  `).all(days) as DailySummary[];
+    LIMIT ?`,
+    args: [days],
+  });
+  return result.rows.map(r => ({
+    date: String(r.date),
+    total_calories: Number(r.total_calories),
+    breakfast_cal: Number(r.breakfast_cal),
+    lunch_cal: Number(r.lunch_cal),
+    dinner_cal: Number(r.dinner_cal),
+    snack_cal: Number(r.snack_cal),
+  }));
 }

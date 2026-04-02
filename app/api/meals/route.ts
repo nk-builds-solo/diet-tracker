@@ -5,7 +5,8 @@ import type { MealType } from '@/lib/types';
 export async function GET(req: NextRequest) {
   const date = req.nextUrl.searchParams.get('date');
   if (!date) return NextResponse.json({ error: 'date is required' }, { status: 400 });
-  return NextResponse.json({ data: getMealsByDate(date) });
+  const data = await getMealsByDate(date);
+  return NextResponse.json({ data });
 }
 
 export async function POST(req: NextRequest) {
@@ -14,6 +15,6 @@ export async function POST(req: NextRequest) {
   if (!date || !meal_type || !name || calories == null) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
-  const meal = addMeal({ date, meal_type: meal_type as MealType, name, calories: Number(calories), memo });
+  const meal = await addMeal({ date, meal_type: meal_type as MealType, name, calories: Number(calories), memo });
   return NextResponse.json({ data: meal }, { status: 201 });
 }

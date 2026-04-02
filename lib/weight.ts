@@ -1,34 +1,54 @@
-import { getDb } from './db';
+import { getDb, initSchema } from './db';
 import type { WeightLog } from './types';
 
-export function getWeightLogs(limit = 30): WeightLog[] {
-  const db = getDb();
-  return db.prepare('SELECT * FROM weight_logs ORDER BY date DESC LIMIT ?').all(limit) as WeightLog[];
+function rowToWeightLog(row: Record<string, unknown>): WeightLog {
+  return {
+    id: Number(row.id),
+    date: String(row.date),
+    weight_kg: Number(row.weight_kg),
+    created_at: String(row.created_at),
+  };
 }
 
-export function upsertWeight(date: string, weight_kg: number): WeightLog {
+export async function getWeightLogs(limit = 30): Promise<WeightLog[]> {
+  await initSchema();
   const db = getDb();
-  return db.prepare(
-    'INSERT OR REPLACE INTO weight_logs (date, weight_kg) VALUES (?, ?) RETURNING *'
-  ).get(date, weight_kg) as WeightLog;
+  const result = await db.execute({
+    sql: 'SELECT * FROM weight_logs ORDER BY date DESC LIMIT ?',
+    args: [limit],
+  });
+  return result.rows.map(r => rowToWeightLog(r as Record<string, unknown>));
 }
 
-export function deleteWeight(id: number): void {
+export async function upsertWeight(date: string, weight_kg: number): Promise<WeightLog> {
   const db = getDb();
-  db.prepare('DELETE FROM weight_logs WHERE id = ?').run(id);
+  const result = await db.execute({
+    sql: 'INSERT OR REPLACE INTO weight_logs (date, weight_kg) VALUES (?, ?) RETURNING *',
+    args: [date, weight_kg],
+  });
+  return rowToWeightLog(result.rows[0] as Record<string, unknown>);
 }
 
-export function getSettings(): { target_calories: number; target_weight_kg: number | null } {
+export async function deleteWeight(id: number): Promise<void> {
   const db = getDb();
-  const rows = db.prepare('SELECT key, value FROM settings').all() as { key: string; value: string }[];
-  const map = Object.fromEntries(rows.map(r => [r.key, r.value]));
+  await db.execute({ sql: 'DELETE FROM weight_logs WHERE id = ?', args: [id] });
+}
+
+export async function getSettings(): Promise<{ target_calories: number; target_weight_kg: number | null }> {
+  await initSchema();
+  const db = getDb();
+  const result = await db.execute('SELECT key, value FROM settings');
+  const map = Object.fromEntries(result.rows.map(r => [String(r.key), String(r.value)]));
   return {
     target_calories: parseInt(map.target_calories ?? '2000', 10),
     target_weight_kg: map.target_weight_kg ? parseFloat(map.target_weight_kg) : null,
   };
 }
 
-export function saveSetting(key: string, value: string): void {
+export async function saveSetting(key: string, value: string): Promise<void> {
   const db = getDb();
-  db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run(key, value);
+  await db.execute({
+    sql: 'INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+    args: [key, value],
+  });
 }
