@@ -34,12 +34,19 @@ export default function MealForm({ date, defaultType = 'breakfast' }: Props) {
     if (!file) return;
     setImagePreview(URL.createObjectURL(file));
     setUploading(true);
-    const fd = new FormData();
-    fd.append('file', file);
-    const res = await fetch('/api/upload', { method: 'POST', body: fd });
-    const json = await res.json();
-    setImageUrl(json.url ?? '');
-    setUploading(false);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      if (res.ok) {
+        const json = await res.json();
+        setImageUrl(json.url ?? '');
+      }
+    } catch {
+      // upload failed — continue without image
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function analyzeImage() {
