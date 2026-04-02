@@ -27,6 +27,7 @@ export default function MealForm({ date, defaultType = 'breakfast' }: Props) {
   const [imagePreview, setImagePreview] = useState('');
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
   const [suggestions, setSuggestions] = useState<FoodItem[]>([]);
   const [saveFood, setSaveFood] = useState(false);
 
@@ -41,6 +42,28 @@ export default function MealForm({ date, defaultType = 'breakfast' }: Props) {
     const json = await res.json();
     setImageUrl(json.url ?? '');
     setUploading(false);
+  }
+
+  async function analyzeImage() {
+    if (!imageUrl) return;
+    setAnalyzing(true);
+    try {
+      const res = await fetch('/api/analyze-food', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_url: imageUrl }),
+      });
+      const json = await res.json();
+      if (json.data) {
+        setName(json.data.name ?? '');
+        setCalories(String(json.data.calories ?? ''));
+        setProtein(String(json.data.protein_g ?? ''));
+        setFat(String(json.data.fat_g ?? ''));
+        setCarbs(String(json.data.carbs_g ?? ''));
+      }
+    } finally {
+      setAnalyzing(false);
+    }
   }
 
   async function handleNameChange(val: string) {
@@ -87,8 +110,7 @@ export default function MealForm({ date, defaultType = 'breakfast' }: Props) {
       }),
     });
 
-    router.push('/');
-    router.refresh();
+    window.location.href = '/';
   }
 
   return (
@@ -133,6 +155,22 @@ export default function MealForm({ date, defaultType = 'breakfast' }: Props) {
         </div>
         <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageChange} />
       </div>
+      {imageUrl && !uploading && (
+        <button type="button" onClick={analyzeImage} disabled={analyzing}
+          className="w-full flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm">
+          {analyzing ? (
+            <>
+              <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              AI解析中...
+            </>
+          ) : (
+            <>✨ AIでカロリーを自動入力</>
+          )}
+        </button>
+      )}
 
       {/* 食品名 + サジェスト */}
       <div className="relative">

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.82.0",
     "@libsql/client": "^0.17.2",
     "@vercel/blob": "^2.3.2",
     "next": "14.2.35",
