@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import Link from 'next/link';
 import { getWeightLogs, getSettings } from '@/lib/weight';
 import WeightChart from '@/components/weight/WeightChart';

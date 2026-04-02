@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getMealsByDate } from '@/lib/meals';
 import { getWeightLogs, getSettings } from '@/lib/weight';
 import TodaySummaryCard from '@/components/dashboard/TodaySummaryCard';
