@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMealsByDate, addMeal } from '@/lib/meals';
+import { initSchema } from '@/lib/db';
 import type { MealType } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
@@ -10,6 +11,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  await initSchema();
   const body = await req.json();
   const { date, meal_type, name, calories, protein_g, fat_g, carbs_g, image_url, memo } = body;
   if (!date || !meal_type || !name || calories == null) {

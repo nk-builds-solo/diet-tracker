@@ -52,4 +52,15 @@ export async function initSchema() {
     `INSERT OR IGNORE INTO settings(key, value) VALUES ('target_calories', '2000')`,
     `INSERT OR IGNORE INTO settings(key, value) VALUES ('target_weight_kg', '')`,
   ], 'write');
+
+  // Migrate old tables that may be missing columns
+  const info = await db.execute('PRAGMA table_info(meals)');
+  const cols = info.rows.map(r => (r as Record<string, unknown>).name as string);
+  const migrations: string[] = [];
+  if (!cols.includes('protein_g')) migrations.push('ALTER TABLE meals ADD COLUMN protein_g REAL DEFAULT 0');
+  if (!cols.includes('fat_g'))     migrations.push('ALTER TABLE meals ADD COLUMN fat_g REAL DEFAULT 0');
+  if (!cols.includes('carbs_g'))   migrations.push('ALTER TABLE meals ADD COLUMN carbs_g REAL DEFAULT 0');
+  if (!cols.includes('image_url')) migrations.push('ALTER TABLE meals ADD COLUMN image_url TEXT DEFAULT \'\'');
+  if (!cols.includes('memo'))      migrations.push('ALTER TABLE meals ADD COLUMN memo TEXT DEFAULT \'\'');
+  if (migrations.length > 0) await db.batch(migrations, 'write');
 }

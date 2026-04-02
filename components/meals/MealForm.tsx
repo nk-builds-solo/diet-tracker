@@ -94,7 +94,7 @@ export default function MealForm({ date, defaultType = 'breakfast' }: Props) {
       });
     }
 
-    await fetch('/api/meals', {
+    const res = await fetch('/api/meals', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -107,6 +107,13 @@ export default function MealForm({ date, defaultType = 'breakfast' }: Props) {
         memo,
       }),
     });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      alert('保存失敗: ' + (err.error ?? res.status));
+      setLoading(false);
+      return;
+    }
 
     window.location.href = '/';
   }
