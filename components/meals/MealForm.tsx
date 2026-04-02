@@ -1,6 +1,5 @@
 'use client';
 import { useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { MealType, FoodItem } from '@/lib/types';
 import { MEAL_TYPE_LABELS } from '@/lib/types';
@@ -13,7 +12,6 @@ interface Props {
 }
 
 export default function MealForm({ date, defaultType = 'breakfast' }: Props) {
-  const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [mealType, setMealType] = useState<MealType>(defaultType);
