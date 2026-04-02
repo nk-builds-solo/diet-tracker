@@ -22,27 +22,43 @@ export default async function DashboardPage() {
   ]);
 
   const dateLabel = new Date().toLocaleDateString('ja-JP', {
-    year: 'numeric', month: 'long', day: 'numeric', weekday: 'short',
+    month: 'long', day: 'numeric', weekday: 'short',
   });
 
   return (
     <div className="space-y-4 py-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-900">ダイエットメモ</h1>
-        <span className="text-sm text-gray-500">{dateLabel}</span>
+      {/* ヘッダー */}
+      <div className="flex items-center justify-between pt-2">
+        <div>
+          <p className="text-xs text-gray-400 font-medium">{dateLabel}</p>
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">ダイエットメモ</h1>
+        </div>
+        <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center shadow-md shadow-green-200">
+          <span className="text-white text-lg">🥗</span>
+        </div>
       </div>
 
       <TodaySummaryCard meals={meals} target={settings.target_calories} />
       <NutritionSummary meals={meals} />
 
       {summaries.length > 1 && (
-        <div className="bg-white rounded-2xl shadow-sm p-5">
-          <h2 className="font-semibold text-gray-700 mb-3">カロリー推移（14日）</h2>
+        <div className="bg-white rounded-2xl shadow-sm p-5 border border-gray-100">
+          <h2 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <span className="w-1 h-4 bg-green-400 rounded-full inline-block" />
+            カロリー推移（14日）
+          </h2>
           <CalorieChart summaries={summaries} target={settings.target_calories} />
         </div>
       )}
 
-      <MealList meals={meals} date={today} />
+      <div>
+        <h2 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+          <span className="w-1 h-4 bg-orange-400 rounded-full inline-block" />
+          今日の食事
+        </h2>
+        <MealList meals={meals} date={today} />
+      </div>
+
       <WeightMiniCard logs={weightLogs} />
     </div>
   );
