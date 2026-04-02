@@ -21,6 +21,10 @@ export async function initSchema() {
       meal_type   TEXT    NOT NULL,
       name        TEXT    NOT NULL,
       calories    INTEGER NOT NULL,
+      protein_g   REAL    DEFAULT 0,
+      fat_g       REAL    DEFAULT 0,
+      carbs_g     REAL    DEFAULT 0,
+      image_url   TEXT    DEFAULT '',
       memo        TEXT    DEFAULT '',
       created_at  TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
     )`,
@@ -32,6 +36,15 @@ export async function initSchema() {
       created_at  TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
     )`,
     `CREATE INDEX IF NOT EXISTS idx_weight_date ON weight_logs(date)`,
+    `CREATE TABLE IF NOT EXISTS food_items (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      name        TEXT    NOT NULL UNIQUE,
+      calories    INTEGER NOT NULL,
+      protein_g   REAL    DEFAULT 0,
+      fat_g       REAL    DEFAULT 0,
+      carbs_g     REAL    DEFAULT 0,
+      created_at  TEXT    NOT NULL DEFAULT (datetime('now','localtime'))
+    )`,
     `CREATE TABLE IF NOT EXISTS settings (
       key   TEXT PRIMARY KEY,
       value TEXT NOT NULL

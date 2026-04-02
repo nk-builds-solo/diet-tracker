@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { getWeightLogs, getSettings } from '@/lib/weight';
 import WeightChart from '@/components/weight/WeightChart';
 import WeightHistory from '@/components/weight/WeightHistory';
+import TargetWeightForm from '@/components/weight/TargetWeightForm';
 
 export default async function WeightPage() {
   const [logs, settings] = await Promise.all([
@@ -20,6 +21,8 @@ export default async function WeightPage() {
           + 記録
         </Link>
       </div>
+
+      <TargetWeightForm initialTarget={settings.target_weight_kg} />
 
       <div className="bg-white rounded-2xl shadow-sm p-4">
         <h2 className="text-sm font-medium text-gray-600 mb-3">推移グラフ（30日）</h2>

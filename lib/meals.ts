@@ -8,6 +8,10 @@ function rowToMeal(row: Record<string, unknown>): Meal {
     meal_type: String(row.meal_type) as MealType,
     name: String(row.name),
     calories: Number(row.calories),
+    protein_g: Number(row.protein_g ?? 0),
+    fat_g: Number(row.fat_g ?? 0),
+    carbs_g: Number(row.carbs_g ?? 0),
+    image_url: String(row.image_url ?? ''),
     memo: String(row.memo ?? ''),
     created_at: String(row.created_at),
   };
@@ -24,12 +28,25 @@ export async function getMealsByDate(date: string): Promise<Meal[]> {
 }
 
 export async function addMeal(data: {
-  date: string; meal_type: MealType; name: string; calories: number; memo?: string;
+  date: string;
+  meal_type: MealType;
+  name: string;
+  calories: number;
+  protein_g?: number;
+  fat_g?: number;
+  carbs_g?: number;
+  image_url?: string;
+  memo?: string;
 }): Promise<Meal> {
   const db = getDb();
   const result = await db.execute({
-    sql: 'INSERT INTO meals (date, meal_type, name, calories, memo) VALUES (?, ?, ?, ?, ?) RETURNING *',
-    args: [data.date, data.meal_type, data.name, data.calories, data.memo ?? ''],
+    sql: `INSERT INTO meals (date, meal_type, name, calories, protein_g, fat_g, carbs_g, image_url, memo)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+    args: [
+      data.date, data.meal_type, data.name, data.calories,
+      data.protein_g ?? 0, data.fat_g ?? 0, data.carbs_g ?? 0,
+      data.image_url ?? '', data.memo ?? '',
+    ],
   });
   return rowToMeal(result.rows[0] as Record<string, unknown>);
 }

@@ -20,6 +20,10 @@ export interface Meal {
   meal_type: MealType;
   name: string;
   calories: number;
+  protein_g: number;
+  fat_g: number;
+  carbs_g: number;
+  image_url: string;
   memo: string;
   created_at: string;
 }
@@ -29,6 +33,15 @@ export interface WeightLog {
   date: string;
   weight_kg: number;
   created_at: string;
+}
+
+export interface FoodItem {
+  id: number;
+  name: string;
+  calories: number;
+  protein_g: number;
+  fat_g: number;
+  carbs_g: number;
 }
 
 export interface DailySummary {
