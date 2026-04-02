@@ -28,7 +28,7 @@ export default function WeightChart({ logs, targetWeight }: Props) {
         <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
         <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#9ca3af' }} tickLine={false} axisLine={false} />
         <YAxis domain={[minW, maxW]} tick={{ fontSize: 11, fill: '#9ca3af' }} tickLine={false} axisLine={false} width={36} />
-        <Tooltip formatter={(v: number) => [`${v} kg`, '体重']} labelStyle={{ fontSize: 12 }} />
+        <Tooltip formatter={(v) => [`${v} kg`, '体重']} labelStyle={{ fontSize: 12 }} />
         {targetWeight && (
           <ReferenceLine y={targetWeight} stroke="#22c55e" strokeDasharray="4 2" label={{ value: '目標', fill: '#22c55e', fontSize: 11 }} />
         )}
