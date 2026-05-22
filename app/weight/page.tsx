@@ -1,15 +1,20 @@
 export const dynamic = 'force-dynamic';
 
 import Link from 'next/link';
+import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 import { getWeightLogs, getSettings } from '@/lib/weight';
 import WeightChart from '@/components/weight/WeightChart';
 import WeightHistory from '@/components/weight/WeightHistory';
 import TargetWeightForm from '@/components/weight/TargetWeightForm';
 
 export default async function WeightPage() {
+  const { userId } = await auth();
+  if (!userId) redirect('/sign-in');
+
   const [logs, settings] = await Promise.all([
-    getWeightLogs(30),
-    getSettings(),
+    getWeightLogs(userId, 30),
+    getSettings(userId),
   ]);
 
   return (

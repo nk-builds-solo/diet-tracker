@@ -1,10 +1,13 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { auth } from '@clerk/nextjs/server';
 import { getMealById } from '@/lib/meals';
 import EditMealForm from '@/components/meals/EditMealForm';
 
 export default async function EditMealPage({ params }: { params: { id: string } }) {
-  const meal = await getMealById(Number(params.id));
+  const { userId } = await auth();
+  if (!userId) notFound();
+  const meal = await getMealById(userId, Number(params.id));
   if (!meal) notFound();
 
   return (

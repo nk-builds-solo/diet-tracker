@@ -12,32 +12,38 @@ function rowToFood(row: Record<string, unknown>): FoodItem {
   };
 }
 
-export async function searchFoods(query: string): Promise<FoodItem[]> {
+export async function searchFoods(userId: string, query: string): Promise<FoodItem[]> {
   const db = getDb();
   const result = await db.execute({
-    sql: 'SELECT * FROM food_items WHERE name LIKE ? ORDER BY name LIMIT 10',
-    args: [`%${query}%`],
+    sql: 'SELECT * FROM food_items WHERE user_id = ? AND name LIKE ? ORDER BY name LIMIT 10',
+    args: [userId, `%${query}%`],
   });
   return result.rows.map(r => rowToFood(r as Record<string, unknown>));
 }
 
-export async function saveFoodItem(data: Omit<FoodItem, 'id'>): Promise<FoodItem> {
+export async function saveFoodItem(userId: string, data: Omit<FoodItem, 'id'>): Promise<FoodItem> {
   const db = getDb();
   const result = await db.execute({
-    sql: `INSERT OR REPLACE INTO food_items (name, calories, protein_g, fat_g, carbs_g)
-          VALUES (?, ?, ?, ?, ?) RETURNING *`,
-    args: [data.name, data.calories, data.protein_g, data.fat_g, data.carbs_g],
+    sql: `INSERT OR REPLACE INTO food_items (user_id, name, calories, protein_g, fat_g, carbs_g)
+          VALUES (?, ?, ?, ?, ?, ?) RETURNING *`,
+    args: [userId, data.name, data.calories, data.protein_g, data.fat_g, data.carbs_g],
   });
   return rowToFood(result.rows[0] as Record<string, unknown>);
 }
 
-export async function deleteFoodItem(id: number): Promise<void> {
+export async function deleteFoodItem(userId: string, id: number): Promise<void> {
   const db = getDb();
-  await db.execute({ sql: 'DELETE FROM food_items WHERE id = ?', args: [id] });
+  await db.execute({
+    sql: 'DELETE FROM food_items WHERE id = ? AND user_id = ?',
+    args: [id, userId],
+  });
 }
 
-export async function getAllFoods(): Promise<FoodItem[]> {
+export async function getAllFoods(userId: string): Promise<FoodItem[]> {
   const db = getDb();
-  const result = await db.execute('SELECT * FROM food_items ORDER BY name');
+  const result = await db.execute({
+    sql: 'SELECT * FROM food_items WHERE user_id = ? ORDER BY name',
+    args: [userId],
+  });
   return result.rows.map(r => rowToFood(r as Record<string, unknown>));
 }

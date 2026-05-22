@@ -17,17 +17,17 @@ function rowToMeal(row: Record<string, unknown>): Meal {
   };
 }
 
-export async function getMealsByDate(date: string): Promise<Meal[]> {
+export async function getMealsByDate(userId: string, date: string): Promise<Meal[]> {
   await initSchema();
   const db = getDb();
   const result = await db.execute({
-    sql: 'SELECT * FROM meals WHERE date = ? ORDER BY created_at ASC',
-    args: [date],
+    sql: 'SELECT * FROM meals WHERE user_id = ? AND date = ? ORDER BY created_at ASC',
+    args: [userId, date],
   });
   return result.rows.map(r => rowToMeal(r as Record<string, unknown>));
 }
 
-export async function addMeal(data: {
+export async function addMeal(userId: string, data: {
   date: string;
   meal_type: MealType;
   name: string;
@@ -40,10 +40,10 @@ export async function addMeal(data: {
 }): Promise<Meal> {
   const db = getDb();
   const result = await db.execute({
-    sql: `INSERT INTO meals (date, meal_type, name, calories, protein_g, fat_g, carbs_g, image_url, memo)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+    sql: `INSERT INTO meals (user_id, date, meal_type, name, calories, protein_g, fat_g, carbs_g, image_url, memo)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
     args: [
-      data.date, data.meal_type, data.name, data.calories,
+      userId, data.date, data.meal_type, data.name, data.calories,
       data.protein_g ?? 0, data.fat_g ?? 0, data.carbs_g ?? 0,
       data.image_url ?? '', data.memo ?? '',
     ],
@@ -51,14 +51,17 @@ export async function addMeal(data: {
   return rowToMeal(result.rows[0] as Record<string, unknown>);
 }
 
-export async function getMealById(id: number): Promise<Meal | null> {
+export async function getMealById(userId: string, id: number): Promise<Meal | null> {
   const db = getDb();
-  const result = await db.execute({ sql: 'SELECT * FROM meals WHERE id = ?', args: [id] });
+  const result = await db.execute({
+    sql: 'SELECT * FROM meals WHERE id = ? AND user_id = ?',
+    args: [id, userId],
+  });
   if (result.rows.length === 0) return null;
   return rowToMeal(result.rows[0] as Record<string, unknown>);
 }
 
-export async function updateMeal(id: number, data: {
+export async function updateMeal(userId: string, id: number, data: {
   meal_type: MealType; name: string; calories: number;
   protein_g?: number; fat_g?: number; carbs_g?: number;
   image_url?: string; memo?: string;
@@ -66,22 +69,25 @@ export async function updateMeal(id: number, data: {
   const db = getDb();
   const result = await db.execute({
     sql: `UPDATE meals SET meal_type=?, name=?, calories=?, protein_g=?, fat_g=?, carbs_g=?, image_url=?, memo=?
-          WHERE id=? RETURNING *`,
+          WHERE id=? AND user_id=? RETURNING *`,
     args: [
       data.meal_type, data.name, data.calories,
       data.protein_g ?? 0, data.fat_g ?? 0, data.carbs_g ?? 0,
-      data.image_url ?? '', data.memo ?? '', id,
+      data.image_url ?? '', data.memo ?? '', id, userId,
     ],
   });
   return rowToMeal(result.rows[0] as Record<string, unknown>);
 }
 
-export async function deleteMeal(id: number): Promise<void> {
+export async function deleteMeal(userId: string, id: number): Promise<void> {
   const db = getDb();
-  await db.execute({ sql: 'DELETE FROM meals WHERE id = ?', args: [id] });
+  await db.execute({
+    sql: 'DELETE FROM meals WHERE id = ? AND user_id = ?',
+    args: [id, userId],
+  });
 }
 
-export async function getDailySummaries(days: number): Promise<DailySummary[]> {
+export async function getDailySummaries(userId: string, days: number): Promise<DailySummary[]> {
   const db = getDb();
   const result = await db.execute({
     sql: `SELECT
@@ -92,10 +98,11 @@ export async function getDailySummaries(days: number): Promise<DailySummary[]> {
       SUM(CASE WHEN meal_type='dinner'    THEN calories ELSE 0 END) as dinner_cal,
       SUM(CASE WHEN meal_type='snack'     THEN calories ELSE 0 END) as snack_cal
     FROM meals
+    WHERE user_id = ?
     GROUP BY date
     ORDER BY date DESC
     LIMIT ?`,
-    args: [days],
+    args: [userId, days],
   });
   return result.rows.map(r => ({
     date: String(r.date),

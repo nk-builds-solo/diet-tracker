@@ -1,6 +1,8 @@
 export const dynamic = 'force-dynamic';
 
 import Link from 'next/link';
+import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 import { getMealsByDate } from '@/lib/meals';
 import MealList from '@/components/dashboard/MealList';
 import DateNav from '@/components/ui/DateNav';
@@ -14,8 +16,11 @@ function todayStr() {
 }
 
 export default async function MealsPage({ searchParams }: Props) {
+  const { userId } = await auth();
+  if (!userId) redirect('/sign-in');
+
   const date = searchParams.date ?? todayStr();
-  const meals = await getMealsByDate(date);
+  const meals = await getMealsByDate(userId, date);
   const totalCal = meals.reduce((s, m) => s + m.calories, 0);
 
   return (

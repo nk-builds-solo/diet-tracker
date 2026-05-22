@@ -1,23 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
 import { getMealsByDate, addMeal } from '@/lib/meals';
 import { initSchema } from '@/lib/db';
 import type { MealType } from '@/lib/types';
 
 export async function GET(req: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const date = req.nextUrl.searchParams.get('date');
   if (!date) return NextResponse.json({ error: 'date is required' }, { status: 400 });
-  const data = await getMealsByDate(date);
+  const data = await getMealsByDate(userId, date);
   return NextResponse.json({ data });
 }
 
 export async function POST(req: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   await initSchema();
   const body = await req.json();
   const { date, meal_type, name, calories, protein_g, fat_g, carbs_g, image_url, memo } = body;
   if (!date || !meal_type || !name || calories == null) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
-  const meal = await addMeal({
+  const meal = await addMeal(userId, {
     date, meal_type: meal_type as MealType, name, calories: Number(calories),
     protein_g: Number(protein_g ?? 0),
     fat_g: Number(fat_g ?? 0),

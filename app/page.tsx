@@ -1,5 +1,7 @@
 export const dynamic = 'force-dynamic';
 
+import { auth } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 import { getMealsByDate, getDailySummaries } from '@/lib/meals';
 import { getWeightLogs, getSettings } from '@/lib/weight';
 import TodaySummaryCard from '@/components/dashboard/TodaySummaryCard';
@@ -13,12 +15,15 @@ function todayStr() {
 }
 
 export default async function DashboardPage() {
+  const { userId } = await auth();
+  if (!userId) redirect('/sign-in');
+
   const today = todayStr();
   const [meals, weightLogs, settings, summaries] = await Promise.all([
-    getMealsByDate(today),
-    getWeightLogs(7),
-    getSettings(),
-    getDailySummaries(14),
+    getMealsByDate(userId, today),
+    getWeightLogs(userId, 7),
+    getSettings(userId),
+    getDailySummaries(userId, 14),
   ]);
 
   const dateLabel = new Date().toLocaleDateString('ja-JP', {
@@ -27,7 +32,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-4 py-6">
-      {/* ヘッダー */}
       <div className="flex items-center justify-between pt-2">
         <div>
           <p className="text-xs text-gray-400 font-medium">{dateLabel}</p>
